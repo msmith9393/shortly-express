@@ -78,13 +78,33 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
-// app.get('/', util.isAuthenticated, function (req, res, next) {
-//   console.log('ANYTHING')
-//   res.render();
-// });
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
 
-app.get('/login', function(req, res, next) {
+app.get('/login', function(req, res) {
   res.render('login');
+});
+
+app.post('/signup', function(req, res) {
+  new User({username: req.body.username})
+  .fetch().then(function(found) {
+    // if user in database
+    if (found) {
+    // you already have an accout, please log in (Maybe redirect to login page)
+      res.redirect('/login');
+    // otherwise
+    } else {
+    // add new user to the database, hash/salt password, make sure to set session that keeps user logged in
+    // log them in send to '/'
+      Users.create({
+        username: req.body.username
+        // password: req.body.password
+      }).then(function(newUser) {
+        res.send(200, newUser);
+      });
+    }
+  });
 });
 
 /************************************************************/
