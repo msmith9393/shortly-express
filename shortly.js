@@ -21,9 +21,15 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  cookieName: 'session',
+  secret: 'anlensoibnanfoiergbkrjdnsdrgar',
+  duration: 30 * 60 * 1000,
+  activeDuration: 5 * 60 * 1000
+}));
 
 app.get('/', util.isAuthenticated,
-function(req, res, next) {
+function(req, res) {
   res.render('index');
 });
 
@@ -110,11 +116,29 @@ app.get('/login', function(req, res) {
   res.render('login');
 });
 
+
 // util.isAuthorized check if user password is the one in the database
-app.post('/login', util.isAuthorized, function(req, res) {
+app.post('/login', function(req, res) {
   // create a session to keep them logged in
   // redirect them to index page
-  res.render('index');
+  new User({username: req.body.username})
+    .fetch().then(function(user) {
+      console.log('USER', user)
+      if (user) {
+        console.log('USER WAS FOUND!', user);
+        console.log('USER PASSWORD', user.attributes.password);
+        if (req.body.password === user.attributes.password) {
+          req.session.user = user;
+          console.log('SESSION USER!', req.session.user);
+          res.redirect('/');
+        } else {
+          console.log('RENDERING');
+          res.render('login', {error: 'Invalid email or password'});
+        }
+      }
+    }).catch(function(err) {
+      console.error('Invalid username or password', err);
+    });
 
 });
 
