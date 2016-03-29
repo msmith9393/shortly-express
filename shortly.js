@@ -33,12 +33,12 @@ function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', util.isAuthenticated,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', util.isAuthenticated,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
@@ -90,12 +90,9 @@ app.post('/signup', function(req, res) {
   var username = req.body.username;
   new User({username: username})
   .fetch().then(function(found) {
-    // if user in database
     if (found) {
-      console.log('found was found', found);
     // you already have an accout, please log in (Maybe redirect to login page)
       res.redirect('/login');
-    // otherwise
     } else {
     // add new user to the database, hash/salt password, make sure to set session that keeps user logged in
     // log them in send to '/'
@@ -103,7 +100,8 @@ app.post('/signup', function(req, res) {
         username: req.body.username,
         password: req.body.password
       }).then(function(newUser) {
-        res.render('login');
+        // req.session.user = newUser;
+        res.redirect('/');
       });
     }
   })
@@ -123,18 +121,15 @@ app.post('/login', function(req, res) {
   // redirect them to index page
   new User({username: req.body.username})
     .fetch().then(function(user) {
-      console.log('USER', user)
       if (user) {
-        console.log('USER WAS FOUND!', user);
-        console.log('USER PASSWORD', user.attributes.password);
         if (req.body.password === user.attributes.password) {
           req.session.user = user;
-          console.log('SESSION USER!', req.session.user);
           res.redirect('/');
         } else {
-          console.log('RENDERING');
           res.render('login', {error: 'Invalid email or password'});
         }
+      } else {
+        res.redirect('/login');
       }
     }).catch(function(err) {
       console.error('Invalid username or password', err);
