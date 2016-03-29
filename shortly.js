@@ -3,6 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('client-sessions');
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -43,6 +44,11 @@ function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
+});
+
+app.get('/logout', function(req, res) {
+  req.session.reset();
+  res.redirect('/');
 });
 
 app.post('/links', 
@@ -96,12 +102,14 @@ app.post('/signup', function(req, res) {
     } else {
     // add new user to the database, hash/salt password, make sure to set session that keeps user logged in
     // log them in send to '/'
-      Users.create({
-        username: req.body.username,
-        password: req.body.password
-      }).then(function(newUser) {
-        // req.session.user = newUser;
-        res.redirect('/');
+      bcrypt.hash(req.body.password, null, null, function(err, hash) {
+        Users.create({
+          username: req.body.username,
+          password: hash
+        }).then(function(newUser) {
+          req.session.user = newUser;
+          res.redirect('/');
+        });
       });
     }
   })
@@ -122,12 +130,30 @@ app.post('/login', function(req, res) {
   new User({username: req.body.username})
     .fetch().then(function(user) {
       if (user) {
-        if (req.body.password === user.attributes.password) {
-          req.session.user = user;
-          res.redirect('/');
-        } else {
-          res.render('login', {error: 'Invalid email or password'});
-        }
+        console.log('USER', user.attributes.password);
+        console.log('ENTERED PASSWORD', req.body.password);
+        var hash = user.attributes.password;
+        // var matched;
+        bcrypt.compare(req.body.password, hash, function(err, matched) {
+          if (matched) {
+            // matched = true;
+            // console.log(matched, 'IN RES');
+            console.log(user);
+            req.session.user = user;
+            res.redirect('/');
+          } else {
+            // matched = false;
+            // console.log(matched, 'IN ELSE');
+            res.render('login', {error: 'Invalid email or password'});
+          }
+        });
+
+        // if (matched) {
+        //   req.session.user = user;
+        //   res.redirect('/');
+        // } else {
+        //   res.render('login', {error: 'Invalid email or password'});
+        // }
       } else {
         res.redirect('/login');
       }
