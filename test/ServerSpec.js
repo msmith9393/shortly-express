@@ -178,6 +178,8 @@ describe('', function() {
 
         requestWithSession(options, function(error, res, body) {
           var code = res.body.code;
+          console.log('CODE', code);
+          console.log('LINK CODE', link.get('code'));
           expect(code).to.equal(link.get('code'));
           done();
         });

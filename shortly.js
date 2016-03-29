@@ -3,8 +3,6 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('client-sessions');
-// var session = require('client-sessions');
-
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -23,7 +21,6 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
-// app.use(express.static('/views'));
 
 app.get('/', util.isAuthenticated,
 function(req, res, next) {
@@ -64,7 +61,7 @@ function(req, res) {
         Links.create({
           url: uri,
           title: title,
-          baseUrl: req.headers.origin
+          baseUrl: 'http://127.0.0.1:4568/links'
         })
         .then(function(newLink) {
           res.send(200, newLink);
@@ -82,15 +79,14 @@ app.get('/signup', function(req, res) {
   res.render('signup');
 });
 
-app.get('/login', function(req, res) {
-  res.render('login');
-});
 
 app.post('/signup', function(req, res) {
-  new User({username: req.body.username})
+  var username = req.body.username;
+  new User({username: username})
   .fetch().then(function(found) {
     // if user in database
     if (found) {
+      console.log('found was found', found);
     // you already have an accout, please log in (Maybe redirect to login page)
       res.redirect('/login');
     // otherwise
@@ -98,14 +94,30 @@ app.post('/signup', function(req, res) {
     // add new user to the database, hash/salt password, make sure to set session that keeps user logged in
     // log them in send to '/'
       Users.create({
-        username: req.body.username
-        // password: req.body.password
+        username: req.body.username,
+        password: req.body.password
       }).then(function(newUser) {
-        res.send(200, newUser);
+        res.render('login');
       });
     }
+  })
+  .catch(function(err) {
+    console.error('error is = ', err);
   });
 });
+
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+// util.isAuthorized check if user password is the one in the database
+app.post('/login', util.isAuthorized, function(req, res) {
+  // create a session to keep them logged in
+  // redirect them to index page
+  res.render('index');
+
+});
+
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
