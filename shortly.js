@@ -130,39 +130,44 @@ app.post('/login', function(req, res) {
   new User({username: req.body.username})
     .fetch().then(function(user) {
       if (user) {
-        console.log('USER', user.attributes.password);
-        console.log('ENTERED PASSWORD', req.body.password);
         var hash = user.attributes.password;
-        // var matched;
         bcrypt.compare(req.body.password, hash, function(err, matched) {
           if (matched) {
-            // matched = true;
-            // console.log(matched, 'IN RES');
-            console.log(user);
             req.session.user = user;
             res.redirect('/');
           } else {
-            // matched = false;
-            // console.log(matched, 'IN ELSE');
             res.render('login', {error: 'Invalid email or password'});
           }
         });
-
-        // if (matched) {
-        //   req.session.user = user;
-        //   res.redirect('/');
-        // } else {
-        //   res.render('login', {error: 'Invalid email or password'});
-        // }
       } else {
         res.redirect('/login');
       }
     }).catch(function(err) {
       console.error('Invalid username or password', err);
     });
-
 });
 
+
+// app.post('/login', function(req, res) {
+//   // create a session to keep them logged in
+//   // redirect them to index page
+//   new User({username: req.body.username})
+//     .fetch().then(function(user) {
+//       if (user) {
+//         if (req.body.password === user.attributes.password) {
+//           req.session.user = user;
+//           res.redirect('/');
+//         } else {
+//           res.render('login', {error: 'Invalid email or password'});
+//         }
+//       } else {
+//         res.redirect('/login');
+//       }
+//     }).catch(function(err) {
+//       console.error('Invalid username or password', err);
+//     });
+
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
